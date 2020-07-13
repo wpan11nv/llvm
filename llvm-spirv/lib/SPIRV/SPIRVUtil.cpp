@@ -445,9 +445,9 @@ Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec) {
   if (!oclIsBuiltin(S, Name))
     Name = S;
   StringRef R(Name);
-  R = dePrefixSPIRVName(R, Postfix);
-  if (!getByName(R.str(), OC))
+  if (R.str().find("spirv") == std::string::npos || !getByName(dePrefixSPIRVName(R, Postfix).str(), OC)){
     return OpNop;
+}
   if (Dec)
     for (auto &I : Postfix)
       Dec->push_back(I.str());
