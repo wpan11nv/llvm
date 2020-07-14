@@ -154,8 +154,7 @@ bool LLVMToSPIRV::isKernel(Function *F) {
 
 bool LLVMToSPIRV::isBuiltinTransToInst(Function *F) {
   StringRef DemangledName;
-  if (!oclIsBuiltin(F->getName(), DemangledName) &&
-      !isDecoratedSPIRVFunc(F, DemangledName))
+  if (!oclIsBuiltin(F->getName(), DemangledName))
     return false;
   SPIRVDBG(spvdbgs() << "CallInst: demangled name: " << DemangledName.str()
                      << '\n');
@@ -2181,8 +2180,7 @@ SPIRVValue *LLVMToSPIRV::transDirectCallInst(CallInst *CI,
   if (MangledName.startswith(SPCV_CAST) || MangledName == SAMPLER_INIT)
     return oclTransSpvcCastSampler(CI, BB);
 
-  if (oclIsBuiltin(MangledName, DemangledName) ||
-      isDecoratedSPIRVFunc(F, DemangledName)) {
+  if (oclIsBuiltin(MangledName, DemangledName)){
     if (auto BV = transBuiltinToConstant(DemangledName, CI))
       return BV;
     if (auto BV = transBuiltinToInst(DemangledName, CI, BB))

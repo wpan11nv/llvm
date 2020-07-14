@@ -438,6 +438,17 @@ std::string getPostfixForReturnType(const Type *PRetTy, bool IsSigned) {
          mapLLVMTypeToOCLType(PRetTy, IsSigned);
 }
 
+// Enqueue kernel, kernel query, pipe and address space cast built-ins
+// are not mangled.
+bool isNonMangledOCLBuiltin(StringRef Name) {
+  if (!Name.startswith("__"))
+    return false;
+
+  return isEnqueueKernelBI(Name) || isKernelQueryBI(Name) ||
+         isPipeOrAddressSpaceCastBI(Name.drop_front(2));
+}
+
+
 Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec) {
   Op OC;
   SmallVector<StringRef, 2> Postfix;
@@ -445,7 +456,7 @@ Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec) {
   if (!oclIsBuiltin(S, Name))
     Name = S;
   StringRef R(Name);
-  if (R.str().find("spirv") == std::string::npos || !getByName(dePrefixSPIRVName(R, Postfix).str(), OC)){
+  if ((R.str().find("spirv") == std::string::npos && !isNonMangledOCLBuiltin(R)) || !getByName(dePrefixSPIRVName(R, Postfix).str(), OC)){
     return OpNop;
 }
   if (Dec)
@@ -460,16 +471,6 @@ bool getSPIRVBuiltin(const std::string &OrigName, spv::BuiltIn &B) {
   R = dePrefixSPIRVName(R, Postfix);
   assert(Postfix.empty() && "Invalid SPIR-V builtin Name");
   return getByName(R.str(), B);
-}
-
-// Enqueue kernel, kernel query, pipe and address space cast built-ins
-// are not mangled.
-bool isNonMangledOCLBuiltin(StringRef Name) {
-  if (!Name.startswith("__"))
-    return false;
-
-  return isEnqueueKernelBI(Name) || isKernelQueryBI(Name) ||
-         isPipeOrAddressSpaceCastBI(Name.drop_front(2));
 }
 
 // Demangled name is a substring of the name. The DemangledName is updated only
@@ -905,13 +906,6 @@ ConstantInt *mapUInt(Module *M, ConstantInt *I,
 
 ConstantInt *mapSInt(Module *M, ConstantInt *I, std::function<int(int)> F) {
   return ConstantInt::get(I->getType(), F(I->getSExtValue()), true);
-}
-
-bool isDecoratedSPIRVFunc(const Function *F, StringRef &UndecoratedName) {
-  if (!F->hasName() || !F->getName().startswith(kSPIRVName::Prefix))
-    return false;
-  UndecoratedName = undecorateSPIRVFunction(F->getName());
-  return true;
 }
 
 /// Get TypePrimitiveEnum for special OpenCL type except opencl.block.
