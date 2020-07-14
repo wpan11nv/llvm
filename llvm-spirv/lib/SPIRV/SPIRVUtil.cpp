@@ -456,7 +456,7 @@ Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec) {
   if (!oclIsBuiltin(S, Name))
     Name = S;
   StringRef R(Name);
-  if ((R.str().find("spirv") == std::string::npos && !isNonMangledOCLBuiltin(R)) || !getByName(dePrefixSPIRVName(R, Postfix).str(), OC)){
+  if ((!Name.startswith(kSPIRVName::Prefix) && !isNonMangledOCLBuiltin(S)) || !getByName(dePrefixSPIRVName(R, Postfix).str(), OC)){
     return OpNop;
 }
   if (Dec)
@@ -906,6 +906,13 @@ ConstantInt *mapUInt(Module *M, ConstantInt *I,
 
 ConstantInt *mapSInt(Module *M, ConstantInt *I, std::function<int(int)> F) {
   return ConstantInt::get(I->getType(), F(I->getSExtValue()), true);
+}
+  
+bool isDecoratedSPIRVFunc(const Function *F, StringRef &UndecoratedName) {
+  if (!F->hasName() || !F->getName().startswith(kSPIRVName::Prefix))
+    return false;
+  UndecoratedName = F->getName();
+  return true;
 }
 
 /// Get TypePrimitiveEnum for special OpenCL type except opencl.block.
