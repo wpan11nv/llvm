@@ -448,7 +448,6 @@ bool isNonMangledOCLBuiltin(StringRef Name) {
          isPipeOrAddressSpaceCastBI(Name.drop_front(2));
 }
 
-
 Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec) {
   Op OC;
   SmallVector<StringRef, 2> Postfix;
@@ -456,9 +455,10 @@ Op getSPIRVFuncOC(StringRef S, SmallVectorImpl<std::string> *Dec) {
   if (!oclIsBuiltin(S, Name))
     Name = S;
   StringRef R(Name);
-  if ((!Name.startswith(kSPIRVName::Prefix) && !isNonMangledOCLBuiltin(S)) || !getByName(dePrefixSPIRVName(R, Postfix).str(), OC)){
+  if ((!Name.startswith(kSPIRVName::Prefix) && !isNonMangledOCLBuiltin(S)) ||
+      !getByName(dePrefixSPIRVName(R, Postfix).str(), OC)) {
     return OpNop;
-}
+  }
   if (Dec)
     for (auto &I : Postfix)
       Dec->push_back(I.str());
@@ -907,7 +907,7 @@ ConstantInt *mapUInt(Module *M, ConstantInt *I,
 ConstantInt *mapSInt(Module *M, ConstantInt *I, std::function<int(int)> F) {
   return ConstantInt::get(I->getType(), F(I->getSExtValue()), true);
 }
-  
+
 bool isDecoratedSPIRVFunc(const Function *F, StringRef &UndecoratedName) {
   if (!F->hasName() || !F->getName().startswith(kSPIRVName::Prefix))
     return false;
